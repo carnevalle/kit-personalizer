@@ -1,0 +1,36 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "f12f161598a1ef989c3a278788b9c33c"
+application_url = "https://disclose-yards-survey-antonio.trycloudflare.com"
+embedded = true
+name = "kit-personalizer"
+handle = "kit-personalizer"
+
+[webhooks]
+api_version = "2024-10"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products,read_products,write_metafields,read_metafields"
+
+[auth]
+redirect_urls = [
+  "https://disclose-yards-survey-antonio.trycloudflare.com/auth/callback",
+  "https://disclose-yards-survey-antonio.trycloudflare.com/auth/shopify/callback",
+  "https://disclose-yards-survey-antonio.trycloudflare.com/api/auth/callback"
+]
+
+[pos]
+embedded = false
+
+[build]
+dev_store_url = "noget-med-kode.myshopify.com"
+automatically_update_urls_on_dev = true
