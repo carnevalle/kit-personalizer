@@ -1,132 +1,132 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   reactExtension,
-  useApi,
   AdminBlock,
   BlockStack,
   Text,
   Button,
-  InlineStack,
+  useApi,
 } from '@shopify/ui-extensions-react/admin';
+import BlockEditor from './components/BlockEditor.jsx';
+import AddBlockModal from './components/AddBlockModal.jsx';
 
-// The target used here must match the target used in the extension's toml file (./shopify.extension.toml)
 const TARGET = 'admin.product-details.block.render';
 
 export default reactExtension(TARGET, () => <App />);
 
 function App() {
-  // The useApi hook provides access to several useful APIs like i18n and data.
-  const {i18n, data, resourcePicker} = useApi(TARGET);
-  console.log({data});
+  const { data, resourcePicker } = useApi(TARGET);
+  const [blocks, setBlocks] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalContext, setModalContext] = useState({ parentType: null });
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(null);
 
-  // State to manage selected products
-  const [selectedProducts, setSelectedProducts] = useState([]);
+  // ✅ Load existing metafield data on initialization
+  useEffect(() => {
+    const metafield = data?.metafields?.find(
+      (mf) => mf.namespace === 'customization' && mf.key === 'kit_personalization'
+    );
+    if (metafield?.value) {
+      try {
+        setBlocks(JSON.parse(metafield.value));
+      } catch (error) {
+        console.error('Failed to parse saved configuration:', error);
+        setErrorMessage('Failed to load saved configuration.');
+      }
+    }
+  }, [data]);
 
-  /**
-   * Open the Resource Picker for products
-   */
-  const openResourcePicker = async () => {
+  // ✅ Open Modal to Add Block
+  const openAddBlockModal = (parentType = null) => {
+    setModalContext({ parentType });
+    setIsModalOpen(true);
+  };
+
+  // ✅ Add a New Block
+  const addBlock = (type) => {
+    const newBlock = {
+      id: `${type}-${Date.now()}`,
+      type,
+      title: '',
+      product_id: '',
+      properties: {},
+      children: type === 'group' ? [] : undefined,
+    };
+    setBlocks((prev) => [...prev, newBlock]);
+    setIsModalOpen(false);
+  };
+
+  // ✅ Update a Block
+  const updateBlock = (id, updatedBlock) => {
+    setBlocks((prev) => prev.map((b) => (b.id === id ? updatedBlock : b)));
+  };
+
+  // ✅ Remove a Block
+  const removeBlock = (id) => {
+    setBlocks((prev) => prev.filter((b) => b.id !== id));
+  };
+
+  // ✅ Save Configuration to Metafield
+  const saveConfiguration = async () => {
+    setIsSaving(true);
+    setErrorMessage(null);
+
     try {
-      const preselectedItems = selectedProducts.map((product) => ({
-        id: product.id,
-        variants: product.variants?.map((variant) => ({ id: variant.id })) || [],
-      }));
-
-      const selected = await resourcePicker({
-        type: 'product',
-        action: 'select',
-        multiple: true, // Allow selecting multiple products
-        filters: [],
-        selectionIds: preselectedItems,
+      const response = await fetch('/api/save-metafield', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          namespace: 'customization',
+          key: 'kit_personalization',
+          value: JSON.stringify(blocks),
+          productId: data?.id,
+        }),
       });
 
-      console.log(selected);
-
-      if (selected) {
-
-        setSelectedProducts(selected);
-
-        /*
-        const newProducts = selected.map((product) => ({
-          id: product.id,
-          title: product.title,
-        }));
-
-        // Prevent duplicates
-        setSelectedProducts((prev) => {
-          const existingIds = prev.map((p) => p.id);
-          return [
-            ...prev,
-            ...newProducts.filter((product) => !existingIds.includes(product.id)),
-          ];
-        });
-        */
-      }else{
-        setSelectedProducts([]);
+      if (!response.ok) {
+        throw new Error(`Failed to save configuration: ${response.statusText}`);
       }
+
+      alert('Configuration saved successfully!');
     } catch (error) {
-      console.error('Resource Picker Error:', error);
+      console.error('Error saving configuration:', error);
+      setErrorMessage('Failed to save configuration. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  /**
-   * Remove a product from the selected list
-   */
-  const handleRemoveProduct = (productId) => {
-    setSelectedProducts((prev) => prev.filter((product) => product.id !== productId));
-  };
+  // ✅ Render Error Message
+  const renderError = () =>
+    errorMessage && <Text style={{ color: 'red' }}>{errorMessage}</Text>;
 
-  /**
-   * Save selected products to a metafield
-   */
-  const handleSave = () => {
-    const payload = JSON.stringify(selectedProducts);
-    console.log('Saved to metafield:', payload);
-
-    // TODO: Save to metafield using useApplyMetafieldsChange
-    // applyMetafieldsChange({
-    //   type: 'updateMetafield',
-    //   namespace: 'custom',
-    //   key: 'kit_personalization',
-    //   value: payload,
-    // });
-  };
-
+  // ✅ Render UI
   return (
-    // The AdminBlock component provides an API for setting the title of the Block extension wrapper.
-    <AdminBlock title={i18n.translate('name')}>
+    <AdminBlock title="Kit Personalization Settings">
       <BlockStack spacing="loose">
-        {/* Open Resource Picker */}
-        <Text fontWeight="bold">Select Products for Personalization:</Text>
-        <Button onClick={openResourcePicker} accessibilityLabel="Open Product Picker">
-          Open Product Picker
+        <Text fontWeight="bold">Personalization Blocks:</Text>
+        {renderError()}
+        <BlockEditor
+          blocks={blocks}
+          onUpdateBlock={updateBlock}
+          onRemoveBlock={removeBlock}
+          onAddBlock={openAddBlockModal}
+        />
+        <Button onClick={() => openAddBlockModal(null)}>Add Block</Button>
+        <Button onClick={saveConfiguration} disabled={isSaving}>
+          {isSaving ? 'Saving...' : 'Save Configuration'}
         </Button>
 
-        {/* Display Selected Products */}
-        <Text fontWeight="bold">Selected Products:</Text>
-        {selectedProducts.length > 0 ? (
-          <BlockStack spacing="tight">
-            {selectedProducts.map((product) => (
-              <InlineStack key={product.id} spacing="tight" align="center">
-                <Text>{product.title}</Text>
-                <Button
-                  onClick={() => handleRemoveProduct(product.id)}
-                  accessibilityLabel={`Remove ${product.title}`}
-                  kind="secondary"
-                >
-                  Remove
-                </Button>
-              </InlineStack>
-            ))}
-          </BlockStack>
-        ) : (
-          <Text>No products selected.</Text>
+        {isModalOpen && (
+          <AddBlockModal
+            onClose={() => setIsModalOpen(false)}
+            onAddBlock={addBlock}
+            parentType={modalContext.parentType}
+          />
         )}
-
-        {/* Save Configuration */}
-        <Button onClick={handleSave} accessibilityLabel="Save Settings">
-          Save Settings
-        </Button>
       </BlockStack>
     </AdminBlock>
   );
