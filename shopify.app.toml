@@ -1,7 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "f12f161598a1ef989c3a278788b9c33c"
-application_url = "https://tigers-orientation-mb-vital.trycloudflare.com"
+application_url = "https://cd-dev-surgical-mod.trycloudflare.com"
 embedded = true
 name = "kit-personalizer"
 handle = "kit-personalizer"
@@ -23,9 +23,9 @@ scopes = "write_products,read_products,write_metafields,read_metafields"
 
 [auth]
 redirect_urls = [
-  "https://tigers-orientation-mb-vital.trycloudflare.com/auth/callback",
-  "https://tigers-orientation-mb-vital.trycloudflare.com/auth/shopify/callback",
-  "https://tigers-orientation-mb-vital.trycloudflare.com/api/auth/callback"
+  "https://cd-dev-surgical-mod.trycloudflare.com/auth/callback",
+  "https://cd-dev-surgical-mod.trycloudflare.com/auth/shopify/callback",
+  "https://cd-dev-surgical-mod.trycloudflare.com/api/auth/callback"
 ]
 
 [pos]

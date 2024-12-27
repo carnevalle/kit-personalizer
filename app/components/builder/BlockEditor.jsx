@@ -1,30 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Card,
   BlockStack,
   Text,
-  List,
   InlineStack,
   ButtonGroup,
   Button,
+  ActionList,
+  Popover,
 } from '@shopify/polaris';
 import { PlusIcon } from '@shopify/polaris-icons';
 import BlockRenderer from './BlockRenderer.jsx';
-import AddBlockModal from './AddBlockModal.jsx';
 
 /**
  * BlockEditor Component
  *
- * Follows Shopify UI standards:
- * - Displays a list of personalization blocks.
- * - Uses a footer button group for adding blocks.
- * - Context-aware rendering for nested and root-level blocks.
+ * Enhancements:
+ * - ActionList organized into two sections: `Container` and `Blocks`.
+ * - Group Block appears under `Container` and is disabled in group context.
  */
 export default function BlockEditor({ blocks, setBlocks, context }) {
-  const [isAddBlockModalOpen, setAddBlockModalOpen] = useState(false);
+  const [isPopoverActive, setIsPopoverActive] = useState(false);
 
   // 🧩 Add a new block to the editor
-  const addBlock = (type) => {
+  const addBlock = useCallback((type) => {
     const newBlock = {
       id: Date.now(),
       type,
@@ -33,8 +32,8 @@ export default function BlockEditor({ blocks, setBlocks, context }) {
       children: type === 'group' ? [] : undefined,
     };
     setBlocks([...blocks, newBlock]);
-    setAddBlockModalOpen(false);
-  };
+    setIsPopoverActive(false); // Close the popover after selection
+  }, [blocks, setBlocks]);
 
   // 🛠️ Update an existing block
   const updateBlock = (updatedBlock) => {
@@ -67,17 +66,48 @@ export default function BlockEditor({ blocks, setBlocks, context }) {
   // 🪄 Determine Button Label Based on Context
   const addButtonLabel = context === 'group' ? 'Add block to group' : 'Add block';
 
+  // 📝 Define ActionList Sections
+  const actionListSections = [
+    {
+      title: 'Container',
+      items: [
+        {
+          content: 'Group Block',
+          onAction: () => addBlock('group'),
+          disabled: context === 'group', // Prevent nesting groups
+        },
+      ],
+    },
+    {
+      title: 'Blocks',
+      items: [
+        {
+          content: 'Variants Block',
+          onAction: () => addBlock('variants'),
+        },
+        {
+          content: 'Custom Name Block',
+          onAction: () => addBlock('custom_name'),
+        },
+        {
+          content: 'Custom Text Block',
+          onAction: () => addBlock('custom_text'),
+        },
+      ],
+    },
+  ];
+
   return (
     <Card roundedAbove="sm" background="bg-surface-secondary">
-      <BlockStack gap="200">
-        {/* 🪄 Title */}
-        <Text as="h2" variant="headingSm" alignment='center'>
+      {/* 🪄 Title */}
+      <BlockStack gap="200" align="center">
+        <Text as="h2" variant="headingSm" alignment="center">
           Personalization Blocks
         </Text>
 
         {/* 🧩 Block List */}
         {blocks.length === 0 ? (
-          <Text as="p" variant="bodyMd" alignment='center'>
+          <Text as="p" variant="bodyMd" alignment="center">
             No personalization blocks added yet.
           </Text>
         ) : (
@@ -96,27 +126,29 @@ export default function BlockEditor({ blocks, setBlocks, context }) {
 
         {/* 📦 Footer Actions */}
         <InlineStack align="center">
-          <ButtonGroup>
-            <Button
-              icon={PlusIcon}
-              variant="primary"
-              onClick={() => setAddBlockModalOpen(true)}
-              accessibilityLabel={addButtonLabel}
-            >
-              {addButtonLabel}
-            </Button>
-          </ButtonGroup>
+          <Popover
+            active={isPopoverActive}
+            activator={
+              <ButtonGroup>
+                <Button
+                  icon={PlusIcon}
+                  variant="primary"
+                  onClick={() => setIsPopoverActive((active) => !active)}
+                  accessibilityLabel={addButtonLabel}
+                >
+                  {addButtonLabel}
+                </Button>
+              </ButtonGroup>
+            }
+            onClose={() => setIsPopoverActive(false)}
+          >
+            <ActionList
+              actionRole="menuitem"
+              sections={actionListSections}
+            />
+          </Popover>
         </InlineStack>
       </BlockStack>
-
-      {/* 📦 Add Block Modal */}
-      {isAddBlockModalOpen && (
-        <AddBlockModal
-          onClose={() => setAddBlockModalOpen(false)}
-          onSelectBlock={addBlock}
-          context={context}
-        />
-      )}
     </Card>
   );
 }

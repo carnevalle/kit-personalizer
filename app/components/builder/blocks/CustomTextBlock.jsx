@@ -1,30 +1,26 @@
 import React from 'react';
-import { Card, Checkbox, TextField, Text, Button } from '@shopify/polaris';
+import BlockContainer from '../BlockContainer.jsx';
 
-export default function CustomTextBlock({ block, onUpdateBlock, onRemoveBlock }) {
-  const handlePropertyChange = (field, value) => {
-    onUpdateBlock({ ...block, properties: { ...block.properties, [field]: value } });
-  };
-
+/**
+ * CustomTextBlock
+ *
+ * Uses BlockContainer for shared functionality and renders text input.
+ */
+export default function CustomTextBlock({ block, onUpdateBlock, onRemoveBlock, onAddBlock }) {
   return (
-    <Card sectioned>
-      <Text variant="headingSm">{block.title}</Text>
-
-      <Checkbox
-        label="Enable Text Input"
-        checked={block.properties?.textInput || false}
-        onChange={(value) => handlePropertyChange('textInput', value)}
-      />
-
-      <TextField
-        label="Placeholder"
-        value={block.properties?.placeholder || ''}
-        onChange={(value) => handlePropertyChange('placeholder', value)}
-      />
-
-      <div style={{ marginTop: '10px' }}>
-        <Button destructive onClick={() => onRemoveBlock(block.id)}>Remove Block</Button>
-      </div>
-    </Card>
+    <BlockContainer
+      block={block}
+      onUpdateBlock={onUpdateBlock}
+      onRemoveBlock={onRemoveBlock}
+      onAddBlock={onAddBlock}
+      renderBlock={({ block, onUpdateBlock }) => (
+        <input
+          type="text"
+          value={block.properties.text || ''}
+          onChange={(e) => onUpdateBlock({ ...block, properties: { text: e.target.value } })}
+          placeholder="Enter custom text"
+        />
+      )}
+    />
   );
 }

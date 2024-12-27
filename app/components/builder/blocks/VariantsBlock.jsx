@@ -1,34 +1,32 @@
 import React from 'react';
-import { Card, Select, Checkbox, Text, Button } from '@shopify/polaris';
+import BlockContainer from '../BlockContainer.jsx';
+import { Select } from '@shopify/polaris';
 
-export default function VariantsBlock({ block, onUpdateBlock, onRemoveBlock }) {
-  const handlePropertyChange = (field, value) => {
-    onUpdateBlock({ ...block, properties: { ...block.properties, [field]: value } });
-  };
-
+/**
+ * VariantsBlock
+ *
+ * Uses BlockContainer for shared functionality and renders a variant dropdown.
+ */
+export default function VariantsBlock({ block, onUpdateBlock, onRemoveBlock, onAddBlock }) {
   return (
-    <Card sectioned>
-      <Text variant="headingSm">{block.title}</Text>
-
-      <Select
-        label="Display Type"
-        options={[
-          { label: 'Dropdown', value: 'dropdown' },
-          { label: 'Radio Buttons', value: 'radio' },
-        ]}
-        value={block.properties?.display_type || 'dropdown'}
-        onChange={(value) => handlePropertyChange('display_type', value)}
-      />
-
-      <Checkbox
-        label="Show Thumbnails"
-        checked={block.properties?.showThumbnails || false}
-        onChange={(value) => handlePropertyChange('showThumbnails', value)}
-      />
-
-      <div style={{ marginTop: '10px' }}>
-        <Button destructive onClick={() => onRemoveBlock(block.id)}>Remove Block</Button>
-      </div>
-    </Card>
+    <BlockContainer
+      block={block}
+      onUpdateBlock={onUpdateBlock}
+      onRemoveBlock={onRemoveBlock}
+      onAddBlock={onAddBlock}
+      renderBlock={({ block, onUpdateBlock }) => (
+        <Select
+          label="Select a variant"
+          options={[
+            { label: 'Variant 1', value: 'variant_1' },
+            { label: 'Variant 2', value: 'variant_2' },
+          ]}
+          value={block.properties.selectedVariant || ''}
+          onChange={(value) =>
+            onUpdateBlock({ ...block, properties: { selectedVariant: value } })
+          }
+        />
+      )}
+    />
   );
 }
